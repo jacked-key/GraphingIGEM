@@ -4,7 +4,7 @@ const svgWidth = 1200;
 let shadow = false;
 let arr = [];
 let isParsed = false;
-let which = 1;
+let freq = 1;
 let coord = [0,0];
 let path = null;
 const datalength = 204;
@@ -42,13 +42,11 @@ var slider = d3.sliderHorizontal()
   .step(1)
   .on("end", val => {
     d3.select("#value").text(val);
-    which = val;
+    freq = val;
     if (isParsed) {
-      path.transition().attrTween("d", (d) => {
-        console.log(d);
-      });
-    }
-  });
+      path.transition().attr("d", line(arr));
+      }
+    });
 
   svg.append("g")
     .attr("transform", "translate(300,750)")
@@ -57,9 +55,9 @@ var slider = d3.sliderHorizontal()
 
 //read data and make graphs
 const line = d3.line()
-             .curve(d3.curveBasis)
-             .x(function(d) {return xScale(d[0]-1);})
-             .y(function(d) {return yScale(d[which]);});
+             .curve(d3.curveLinear)
+             .x(function(d) {return xScale(d[0]-1);}) //since the first column is 1->data value, this extablished the domain
+             .y(function(d) {return yScale(d[freq]);});
 parseData();
 
 let focus = svg.append("g")
@@ -141,6 +139,7 @@ function parseData() { //asynchronous thing
   d3.csv("/data.csv", function(data) {
     arr.push(Object.values(data));
     if (arr.length == datalength) {
+
       console.log(arr);
       isParsed = true;
 
@@ -186,8 +185,8 @@ function createMovingObject() {
 }
 function mouseMove() {
   focus.select("line").attr("transform", "translate(" + d3.mouse(this)[0] + ",0)");
-  console.log(arr[Math.round(xScale.invert(d3.mouse(this)[0] - offsetx))][which]);
-  focus.select("circle").attr("transform", "translate(" + d3.mouse(this)[0] + "," + (yScale(arr[Math.round(xScale.invert(d3.mouse(this)[0] - offsetx))][which])+offsety)+ ")");
+  console.log(arr[Math.round(xScale.invert(d3.mouse(this)[0] - offsetx))][freq]);
+  focus.select("circle").attr("transform", "translate(" + d3.mouse(this)[0] + "," + (yScale(arr[Math.round(xScale.invert(d3.mouse(this)[0] - offsetx))][freq])+offsety)+ ")");
 }
 function mouseOut() {
   focus.style("display", "none");
