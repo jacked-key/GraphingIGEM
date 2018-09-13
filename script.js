@@ -1,12 +1,11 @@
 /*jshint esversion: 6 */
 const svgHeight = 800;
-const svgWidth = 1200;
-let shadow = false;
-let arr = [];
-let isParsed = false;
-let freq = 1;
-let coord = [0,0];
-let path = null;
+const svgWidth = 1300;
+var shadow = true;
+var arr = [];
+var isParsed = false;
+var freq = 1;
+var path = null;
 const datalength = 204;
 const datarange = 1;
 //svg is the svg container reference svg2 might be animation
@@ -17,90 +16,35 @@ const svg = d3.select("body").append("svg")
             .attr("width", svgWidth)
             .attr("height", svgHeight)
             .style("opacity", 0);
-
+//focus is our object that moves
+var focus = svg.append("g")
+               .attr("class", "focus")
+               .style("display", "none");
 // svg repositioning using jquery
 $("svg").css({top: 50, left: 200, position:'absolute'});
 $("rect").css({position:'absolute'});
+
+
 //creating the graph
+
 const graphHeight = 600;
 const graphWidth = 1200;
-
-const offsety = 100;
+const offsety = 100; //offset of the svg from border
 const offsetx = (svgWidth - graphWidth)/2;
-
+//creating interpolation function for our graph
 var xScale = d3.scaleLinear().domain([0,datalength]).range([0, graphWidth]);
 var yScale = d3.scaleLinear().domain([0,datarange]).range([graphHeight, 0]);
-createGraph();
-
-//creating the slider
-var slider = d3.sliderHorizontal()
-  .min(1)
-  .max(59)
-  .width(600)
-  .ticks(59)
-  .default(20)
-  .step(1)
-  .on("end", val => {
-    d3.select("#value").text(val);
-    freq = val;
-    if (isParsed) {
-      path.transition().attr("d", line(arr));
-      }
-    });
-
-  svg.append("g")
-    .attr("transform", "translate(300,750)")
-    .call(slider);
-
-
-//read data and make graphs
+//Our function to convert Matrix to points on a line
 const line = d3.line()
              .curve(d3.curveLinear)
              .x(function(d) {return xScale(d[0]-1);}) //since the first column is 1->data value, this extablished the domain
              .y(function(d) {return yScale(d[freq]);});
-parseData();
-
-let focus = svg.append("g")
-               .attr("class", "focus")
-               .style("display", "none");
+createGraph();
 createMovingObject();
-svg.append("rect")
-   .attr("pointer-events", "all")
-   .attr("class", "overlay")
-   .attr("x", offsetx)
-   .attr("y", offsety)
-   .attr("width", graphWidth)
-   .attr("height", graphHeight)
-   .attr("fill", "none")//you can also set color
-   .on("mouseover", mouseOver)
-   .on("mouseout", mouseOut)
-   .on("mousemove", mouseMove);
-/*
-var Data3 = [[0,0.4],[20,0.6],[40,0.3],[60,0.9],[80,0],[100,0.1]];
-var line3 = d3.line().curve(d3.curveLinear)
-             .x(function (d) {return xScale(d[0]);})
-             .y(function (d) {return yScale(d[1]);});
-
-svg.append("path").attr("d", line3(Data3))
-                  .attr("stroke", "blue")
-                  .attr("stroke-width", 2)
-                  .attr("fill", "none")
-                  .attr("transform", "translate(100, 50)");
-var Data2 = [{"x": 0, "y":0},
-{"x": 20, "y":0.3},
-{"x": 40, "y":0.5},
-{"x": 60, "y":0.7},
-{"x": 80, "y":0.5},
-{"x": 100, "y":1.0}];
-var line2 = d3.line().curve(d3.curveBasis)
-             .x(function (d) {return xScale(d.x);})
-             .y(function (d) {return yScale(d.y);});
-
-svg.append("path").attr("d", line2(Data2))
-                  .attr("stroke", "blue")
-                  .attr("stroke-width", 2)
-                  .attr("fill", "none")
-                  .attr("transform", "translate(100, 50)");*/
+//Slider
+createSlider();
+//read data and make graphs
+parseData();
 
 //shadow drop
 if (shadow) {
@@ -131,8 +75,8 @@ if (shadow) {
   feMerge.append("feMergeNode").attr("in","offsetBlur");
   feMerge.append("feMergeNode").attr("in", "SourceGraphic");
 }
-//focus is our object that moves
-svg.transition().delay(1000).duration(1000).style("opacity", 1);
+
+MyTransition();
 
 function parseData() { //asynchronous thing
   //creates an array of arrays with arr[time][data]
@@ -147,7 +91,7 @@ function parseData() { //asynchronous thing
                         .attr("stroke", "red")
                         .attr("stroke-width", 1)
                         .attr("fill", "none")
-                        //.style("filter", function() { return showDropShadow ? "url(#drop-shadow)" : "" })
+                        .style("filter", function() { return shadow ? "url(#drop-shadow)" : "" ;})
                         .attr("transform", "translate("+offsetx+","+ offsety+")");
     }
   });
@@ -155,6 +99,18 @@ function parseData() { //asynchronous thing
 function createGraph() {
   var x_axis = d3.axisBottom().scale(xScale).ticks(20);
   var y_axis = d3.axisLeft().scale(yScale);
+  //overlay that determines points
+  svg.append("rect")
+     .attr("pointer-events", "all")
+     .attr("class", "overlay")
+     .attr("x", offsetx)
+     .attr("y", offsety)
+     .attr("width", graphWidth)
+     .attr("height", graphHeight)
+     .attr("fill", "none")//you can also set color
+     .on("mouseover", mouseOver)
+     .on("mouseout", mouseOut)
+     .on("mousemove", mouseMove);
   for (let i = 1; i<11 ; i++) {
     svg.append("line")
        .style("stroke", "grey")
@@ -172,6 +128,25 @@ function createGraph() {
      .call(x_axis)
      .attr("transform", "translate("+offsetx +"," + (graphHeight+offsety) + ")");
 }
+function createSlider() {
+  var slider = d3.sliderHorizontal()
+    .min(1)
+    .max(58)
+    .width(600)
+    .ticks(58)
+    .default(20)
+    .step(1)
+    .on("end", val => {
+      d3.select("#value").text(val);
+      freq = val;
+      if (isParsed) {
+        path.transition().attr("d", line(arr));
+        }
+      });
+    svg.append("g")
+      .attr("transform", "translate(300,750)")
+      .call(slider);
+}
 function createMovingObject() {
   focus.append("line")
        .style("stroke", "blue")
@@ -186,11 +161,20 @@ function createMovingObject() {
 function mouseMove() {
   focus.select("line").attr("transform", "translate(" + d3.mouse(this)[0] + ",0)");
   console.log(arr[Math.round(xScale.invert(d3.mouse(this)[0] - offsetx))][freq]);
-  focus.select("circle").attr("transform", "translate(" + d3.mouse(this)[0] + "," + (yScale(arr[Math.round(xScale.invert(d3.mouse(this)[0] - offsetx))][freq])+offsety)+ ")");
+
+  let xVAL = xScale.invert(d3.mouse(this)[0] - offsetx);
+  let xRound = Math.floor(xVAL);
+  let yValue = (yScale(arr[xRound+1][freq]) - yScale(arr[xRound][freq]))*(xVAL-xRound)+offsety+yScale(arr[xRound][freq]);
+  //let yVAL = (yScale(arr[Math.round(xScale.invert(d3.mouse(this)[0] - offsetx))][freq])+offsety);
+
+  focus.select("circle").attr("transform", "translate(" + d3.mouse(this)[0] + "," + yValue + ")");
 }
 function mouseOut() {
   focus.style("display", "none");
 }
 function mouseOver() {
   focus.style("display", null);
+}
+function MyTransition() {
+  svg.transition().delay(1000).duration(1000).style("opacity", 1);
 }
