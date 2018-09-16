@@ -1,6 +1,6 @@
 /*jshint esversion: 6 */
 const svgHeight = 800;
-const svgWidth = 1300;
+const svgWidth = 800;
 var shadow = true;
 var arr = [];
 var isParsed = false;
@@ -27,8 +27,8 @@ $("rect").css({position:'absolute'});
 
 //creating the graph
 
-const graphHeight = 600;
-const graphWidth = 1200;
+const graphHeight = 300;
+const graphWidth = 600;
 const offsety = 100; //offset of the svg from border
 const offsetx = (svgWidth - graphWidth)/2;
 //creating interpolation function for our graph
@@ -133,18 +133,18 @@ function createSlider() {
     .min(1)
     .max(58)
     .width(600)
-    .ticks(58)
+    .ticks(5)
     .default(20)
-    .step(1)
+    //.step(1) need this for step slider
     .on("end", val => {
       d3.select("#value").text(val);
-      freq = val;
+      freq = Math.round(val); //I used round istead of floor because the simple slider uses round on axis
       if (isParsed) {
         path.transition().attr("d", line(arr));
         }
       });
     svg.append("g")
-      .attr("transform", "translate(300,750)")
+      .attr("transform", "translate("+ (offsetx)+","+ (graphHeight + offsety + 50) +")")
       .call(slider);
 }
 function createMovingObject() {
@@ -156,7 +156,15 @@ function createMovingObject() {
        .attr("y2", offsety+graphHeight);
   focus.append("circle")
        .attr("r", 5)
-       .attr("fill", "blue");
+       .attr("fill", "white")
+       .attr("stroke", "red");
+  focus.append("rect")
+       .attr("x", 50)
+       .attr("y", -150)
+       .attr("width", 100)
+       .attr("height", 50)
+       .attr("stroke", "black")
+       .attr("fill" , "white");
 }
 function mouseMove() {
   focus.select("line").attr("transform", "translate(" + d3.mouse(this)[0] + ",0)");
@@ -168,6 +176,7 @@ function mouseMove() {
   //let yVAL = (yScale(arr[Math.round(xScale.invert(d3.mouse(this)[0] - offsetx))][freq])+offsety);
 
   focus.select("circle").attr("transform", "translate(" + d3.mouse(this)[0] + "," + yValue + ")");
+  focus.select("rect").attr("transform", "translate(" + d3.mouse(this)[0] + "," + yValue + ")");
 }
 function mouseOut() {
   focus.style("display", "none");
